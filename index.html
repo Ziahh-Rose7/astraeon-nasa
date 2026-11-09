@@ -1,0 +1,168 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#03040b" />
+  <meta name="description" content="ASTRAEON: A Living Museum of Space Exploration. Meet NASA's discarded, retired and distant machines on the Moon, Mars and beyond. Every machine has a story." />
+  <title>ASTRAEON · A Living Museum of Space Exploration</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Ccircle cx='32' cy='32' r='30' fill='%2303040b'/%3E%3Ccircle cx='32' cy='32' r='12' fill='%2336f2ff'/%3E%3Cellipse cx='32' cy='32' rx='28' ry='9' fill='none' stroke='%239b6bff' stroke-width='3' transform='rotate(-25 32 32)'/%3E%3C/svg%3E" />
+</head>
+<body>
+<div id="app">
+  <canvas id="scene" aria-label="Interactive 3D Solar System. Drag to rotate, scroll to zoom, click a planet to travel to it." tabindex="0"></canvas>
+  <div id="labels" aria-hidden="false"></div>
+  <div id="vignette" aria-hidden="true"></div>
+
+  <!-- Loading screen -->
+  <div id="loader" class="screen" role="status" aria-live="polite">
+    <div class="loader-core">
+      <div class="loader-orbit" aria-hidden="true"><span></span><span></span><span></span></div>
+      <h1 class="logo">ASTRAEON</h1>
+      <div class="bar"><i id="loader-bar"></i></div>
+      <p id="loader-label">Initialising…</p>
+      <p id="loader-pct">0%</p>
+    </div>
+  </div>
+
+  <!-- Title screen -->
+  <div id="title" class="screen hidden">
+    <div class="title-inner">
+      <p class="eyebrow">NASA Space Apps Challenge 2026 · Abandoned but not Forgotten</p>
+      <h1 id="title-main">ASTRAEON</h1>
+      <p class="subtitle">A Living Museum of Space Exploration</p>
+      <p class="tagline">“Every machine has a story. Every discovery echoes through the cosmos.”</p>
+      <div class="title-actions">
+        <button id="btn-start" class="btn btn-primary btn-xl" type="button">START EXPLORATION</button>
+        <button id="btn-title-sound" class="btn btn-ghost" type="button" aria-pressed="true">SOUND ON</button>
+      </div>
+      <p class="title-note">Best with headphones · Chrome, Edge, Safari or Firefox · Sounds are generated in your browser</p>
+    </div>
+  </div>
+
+  <!-- Top bar -->
+  <header id="hud" class="hidden">
+    <div class="hud-left">
+      <button id="btn-home" class="brand" type="button" aria-label="ASTRAEON, back to the Solar System">ASTRAEON</button>
+      <nav id="crumbs" aria-label="Where you are"></nav>
+    </div>
+    <button id="btn-menu" class="icon-btn menu-btn" type="button" aria-label="Open menu" aria-expanded="false">☰</button>
+    <div id="hud-actions" class="hud-right">
+      <button id="btn-archive" class="btn btn-ghost btn-sm" type="button">ARCHIVE</button>
+      <button id="btn-deep" class="btn btn-ghost btn-sm" type="button">DEEP SPACE</button>
+      <button id="btn-quiz" class="btn btn-ghost btn-sm" type="button">QUIZ</button>
+      <button id="btn-badges" class="btn btn-ghost btn-sm" type="button">BADGES <span id="badge-count" class="pill">0</span></button>
+      <div id="mode-switch" class="seg" role="group" aria-label="Content mode">
+        <button id="mode-story" type="button" class="active" aria-pressed="true" data-mode="story">STORY</button>
+        <button id="mode-science" type="button" aria-pressed="false" data-mode="science">SCIENCE</button>
+      </div>
+      <button id="btn-sound" class="btn btn-ghost btn-sm" type="button" aria-pressed="true">SOUND ON</button>
+      <button id="btn-fullscreen" class="icon-btn" type="button" aria-label="Toggle fullscreen" title="Fullscreen (F)">⛶</button>
+      <button id="btn-settings" class="icon-btn" type="button" aria-label="Accessibility and settings" title="Settings">⚙</button>
+      <button id="btn-help" class="icon-btn" type="button" aria-label="Help and tutorial" title="Help (?)">?</button>
+    </div>
+  </header>
+
+  <!-- Navigation -->
+  <button id="btn-back" class="btn btn-primary back-btn hidden" type="button">◂ BACK TO SOLAR SYSTEM</button>
+  <div id="zoom-controls" class="hidden" role="group" aria-label="Zoom controls">
+    <button id="zoom-in" class="icon-btn" type="button" aria-label="Zoom in">+</button>
+    <button id="zoom-out" class="icon-btn" type="button" aria-label="Zoom out">−</button>
+  </div>
+  <div id="hint" class="hidden"><span id="hint-text">Click a planet to travel there · Drag to rotate · Scroll to zoom</span></div>
+  <aside id="fact" class="hidden" aria-live="off"><b>DID YOU KNOW?</b> <span id="fact-text"></span></aside>
+  <button id="scale-note" class="hidden" type="button">ⓘ Sizes and distances are scaled for visual clarity</button>
+
+  <!-- Side panels -->
+  <aside id="info-panel" class="panel hidden" aria-label="Celestial body information"></aside>
+  <aside id="region-panel" class="panel hidden" aria-label="Exploration panel"></aside>
+  <aside id="archive-panel" class="panel panel-left hidden" aria-label="Mission archive"></aside>
+
+  <!-- Flat Ghost Map -->
+  <div id="flatmap-wrap" class="hidden" role="dialog" aria-label="Flat Ghost Map">
+    <div class="flatmap-head"><h2 id="flatmap-title">Ghost Map</h2><button id="flatmap-close" class="icon-btn" type="button" aria-label="Close flat map">✕</button></div>
+    <div id="flatmap"></div>
+  </div>
+
+  <!-- Spacecraft detail screen -->
+  <section id="craft-view" class="hidden" aria-label="Spacecraft details">
+    <div id="craft-stage">
+      <div id="craft-hotspots" aria-label="Instrument markers"></div>
+      <div id="stage-title">
+        <span id="craft-kind" class="eyebrow"></span>
+        <h2 id="craft-name"></h2>
+        <span id="craft-status"></span>
+      </div>
+      <div id="stage-toolbar" role="toolbar" aria-label="3D model controls">
+        <button id="stage-reset" class="icon-btn" type="button" title="Reset view" aria-label="Reset view">⟲</button>
+        <button id="stage-rotate" class="icon-btn" type="button" title="Auto-rotate" aria-label="Auto-rotate" aria-pressed="true">⟳</button>
+        <button id="stage-hotspots" class="icon-btn" type="button" title="Instrument markers" aria-label="Show instrument markers" aria-pressed="true">◉</button>
+        <button id="stage-zoom-in" class="icon-btn" type="button" title="Zoom in" aria-label="Zoom in">+</button>
+        <button id="stage-zoom-out" class="icon-btn" type="button" title="Zoom out" aria-label="Zoom out">−</button>
+      </div>
+      <div id="hotspot-card" class="hidden" role="status"></div>
+      <p id="stage-hint">Drag to rotate · Scroll to zoom · Tap the numbered markers to inspect instruments</p>
+    </div>
+    <aside id="craft-panel" aria-label="Mission information">
+      <div class="panel-top">
+        <button id="craft-close" class="btn btn-ghost btn-sm" type="button">◂ BACK TO MAP</button>
+        <div id="craft-mode" class="seg" role="group" aria-label="Content mode">
+          <button type="button" data-mode="story" class="active" aria-pressed="true">STORY</button>
+          <button type="button" data-mode="science" aria-pressed="false">SCIENCE</button>
+        </div>
+      </div>
+      <div id="craft-tabs" class="tabs" role="tablist" aria-label="Spacecraft sections">
+        <button role="tab" type="button" data-tab="overview" class="active" aria-selected="true">OVERVIEW</button>
+        <button role="tab" type="button" data-tab="instruments" aria-selected="false">INSTRUMENTS</button>
+        <button role="tab" type="button" data-tab="timeline" aria-selected="false">TIMELINE</button>
+        <button role="tab" type="button" data-tab="photos" aria-selected="false">PHOTOS</button>
+      </div>
+      <div id="craft-tabpanel" class="tab-body" role="tabpanel"></div>
+    </aside>
+  </section>
+
+  <!-- Subtitles and narration controls -->
+  <div id="subtitle-dock" class="hidden" data-state="idle">
+    <div id="subtitle-panel" aria-live="polite">
+      <div id="sub-name"></div>
+      <p id="sub-text">Press PLAY to begin the narration.</p>
+      <div id="sub-progress" aria-hidden="true"><i></i></div>
+    </div>
+    <div id="narration-controls" role="group" aria-label="Narration controls">
+      <button id="nar-prev" class="ctl" type="button" aria-label="Previous line">⏮</button>
+      <button id="nar-play" class="ctl primary" type="button">▶ PLAY</button>
+      <button id="nar-pause" class="ctl" type="button" disabled>❚❚ PAUSE</button>
+      <button id="nar-restart" class="ctl" type="button">↺ RESTART</button>
+      <button id="nar-stop" class="ctl" type="button" disabled>■ STOP</button>
+      <button id="nar-next" class="ctl" type="button" aria-label="Next line">⏭</button>
+      <button id="nar-cc" class="ctl" type="button" aria-pressed="true">CC ON</button>
+      <button id="nar-voice" class="ctl" type="button" aria-pressed="true">VOICE ON</button>
+      <label class="slider">SPEED <input id="nar-speed" type="range" min="0.6" max="1.4" step="0.05" value="0.95" /><output id="nar-speed-val">0.95×</output></label>
+      <label class="slider">VOLUME <input id="nar-volume" type="range" min="0" max="1" step="0.05" value="1" /><output id="nar-volume-val">100%</output></label>
+      <select id="nar-voice-select" aria-label="Narration voice"><option value="">Auto (best available)</option></select>
+    </div>
+    <p id="nar-support-note" class="hidden">Your browser has no speech voice, so the story advances on a reading timer. Subtitles still work.</p>
+  </div>
+
+  <!-- Generic modal (help, settings, quiz, badges, photos) -->
+  <div id="modal" class="hidden" role="dialog" aria-modal="true" aria-labelledby="modal-title">
+    <div class="modal-card">
+      <button id="modal-close" class="icon-btn" type="button" aria-label="Close dialog">✕</button>
+      <h2 id="modal-title"></h2>
+      <div id="modal-body"></div>
+    </div>
+  </div>
+
+  <div id="toast" role="status" aria-live="polite"></div>
+
+  <div id="webgl-error" class="hidden">
+    <div class="modal-card">
+      <h2>3D graphics are not available</h2>
+      <p>ASTRAEON needs WebGL. Please try a recent version of Chrome, Edge, Firefox or Safari, and make sure hardware acceleration is turned on in your browser settings.</p>
+    </div>
+  </div>
+</div>
+<noscript><p style="color:#fff;padding:2rem">ASTRAEON needs JavaScript. Please enable it and reload.</p></noscript>
+<script type="module" src="/src/main.js"></script>
+</body>
+</html>

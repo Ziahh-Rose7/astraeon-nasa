@@ -1,0 +1,21 @@
+{
+  "name": "astraeon",
+  "version": "1.0.0",
+  "description": "ASTRAEON - A Living Museum of Space Exploration. NASA Space Apps Challenge 2026: Abandoned but not Forgotten.",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite --open",
+    "build": "vite build",
+    "preview": "vite preview --open"
+  },
+  "dependencies": {
+    "@fontsource/orbitron": "^5.0.0",
+    "@fontsource/rajdhani": "^5.0.0",
+    "gsap": "^3.12.5",
+    "three": "^0.170.0"
+  },
+  "devDependencies": {
+    "vite": "^5.4.11"
+  }
+}
